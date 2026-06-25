@@ -1,6 +1,6 @@
 ﻿# WEB102 Unit 4 Lab: Cap
 
-Submitted by: **Sabiu**
+Submitted by: **Olabode Jimoh**
 
 Build Your Own Screenshot! is a React + Vite app that uses the ApiFlash API to generate screenshots from user-selected query parameters.
 
@@ -36,6 +36,6 @@ TODO: Add Loom walkthrough link after recording.
 
 ## License
 
-Copyright 2026 Sabiu
+Copyright 2026 Olabode Jimoh
 
 Licensed under the Apache License, Version 2.0.
