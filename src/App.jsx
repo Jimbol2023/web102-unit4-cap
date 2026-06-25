@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
 import './App.css'
+import Gallery from './Gallery'
 
 const API_ENDPOINT = 'https://api.apiflash.com/v1/urltoimage'
 
@@ -14,7 +15,7 @@ const defaultForm = {
 
 function App() {
   const [form, setForm] = useState(defaultForm)
-  const [screenshots, setScreenshots] = useState([])
+  const [prevImages, setPrevImages] = useState([])
   const [latestScreenshot, setLatestScreenshot] = useState(null)
   const [status, setStatus] = useState('Ready to generate your first screenshot.')
   const [error, setError] = useState('')
@@ -72,7 +73,7 @@ function App() {
       }
 
       setLatestScreenshot(screenshot)
-      setScreenshots((currentScreenshots) => [screenshot, ...currentScreenshots])
+      setPrevImages((currentImages) => [screenshot, ...currentImages])
       setStatus('Screenshot generated successfully!')
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Something went wrong.')
@@ -103,6 +104,7 @@ function App() {
               placeholder="https://example.com"
               required
             />
+            <span className="field-help">The full website address that ApiFlash should capture.</span>
           </label>
 
           <div className="field-row">
@@ -116,6 +118,7 @@ function App() {
                 onChange={(event) => updateField('width', Number(event.target.value))}
                 required
               />
+              <span className="field-help">Controls how wide the screenshot image will be in pixels.</span>
             </label>
             <label>
               Height
@@ -127,6 +130,7 @@ function App() {
                 onChange={(event) => updateField('height', Number(event.target.value))}
                 required
               />
+              <span className="field-help">Controls how tall the screenshot image will be in pixels.</span>
             </label>
           </div>
 
@@ -137,6 +141,7 @@ function App() {
               <option value="png">PNG</option>
               <option value="webp">WEBP</option>
             </select>
+            <span className="field-help">Choose the file type returned by ApiFlash.</span>
           </label>
 
           <div className="toggle-list">
@@ -146,7 +151,10 @@ function App() {
                 checked={form.noAds}
                 onChange={(event) => updateField('noAds', event.target.checked)}
               />
-              No ads
+              <span>
+                No ads
+                <span className="field-help">Ask ApiFlash to remove ads before taking the screenshot.</span>
+              </span>
             </label>
             <label className="toggle-field">
               <input
@@ -154,7 +162,10 @@ function App() {
                 checked={form.noCookieBanners}
                 onChange={(event) => updateField('noCookieBanners', event.target.checked)}
               />
-              No cookie banners
+              <span>
+                No cookie banners
+                <span className="field-help">Ask ApiFlash to hide cookie notices before taking the screenshot.</span>
+              </span>
             </label>
           </div>
 
@@ -165,7 +176,7 @@ function App() {
 
         <section className="result-panel" aria-live="polite">
           <div className="status-card">
-            <p className="status-label">Current API query/status</p>
+            <p className="status-label">Current Query Status</p>
             <code>{queryPreview}</code>
             <p>{status}</p>
           </div>
@@ -183,30 +194,9 @@ function App() {
         </section>
       </section>
 
-      <section className="gallery-section">
-        <div>
-          <p className="eyebrow">Gallery</p>
-          <h2>All screenshots generated so far</h2>
-        </div>
-
-        {screenshots.length === 0 ? (
-          <p className="empty-gallery">No screenshots yet. Generate one to start your gallery.</p>
-        ) : (
-          <div className="gallery-grid">
-            {screenshots.map((screenshot) => (
-              <article className="gallery-card" key={screenshot.id}>
-                <img src={screenshot.imageUrl} alt={`Screenshot of ${screenshot.capturedUrl}`} />
-                <div>
-                  <p>{screenshot.capturedUrl}</p>
-                  <span>
-                    {screenshot.size} · {screenshot.format.toUpperCase()} · {screenshot.createdAt}
-                  </span>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="container">
+        <Gallery images={prevImages} />
+      </div>
     </main>
   )
 }

@@ -10,14 +10,12 @@ Time spent: **TBD** hours spent in total
 
 The following **required** functionality is completed:
 
-- [x] The app uses the ApiFlash API.
-- [x] The app makes an API call using `async/await`.
-- [x] The app saves API results with `useState`.
-- [x] The user can edit at least 3 query parameters.
-- [x] The user can edit URL, width, height, format, no ads, and no cookie banners.
-- [x] The returned screenshot is displayed on the page.
-- [x] All screenshots generated so far are displayed in a gallery.
-- [x] The ApiFlash access key is loaded from `.env` and is not hardcoded into committed source code.
+- [x] Make a static API call using async/await
+- [x] Save API results using React state
+- [x] Allow the user to edit at least three ApiFlash query parameters
+- [x] Display the screenshot returned from the API
+- [x] Display every screenshot previously generated in a Screenshot Gallery
+- [x] Custom CSS styling
 
 The following **stretch** features are implemented:
 
