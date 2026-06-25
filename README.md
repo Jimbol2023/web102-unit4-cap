@@ -23,11 +23,13 @@ The following **stretch** features are implemented:
 
 - [x] Custom CSS styling is added.
 
+## Screenshot
+
+<img src="./public/screenshots/app-demo.png" alt="Cap app screenshot" width="700" />
+
 ## Video Walkthrough
 
-Add a GIF or Loom walkthrough here:
-
-`TODO: Add walkthrough link or GIF`
+TODO: Add Loom walkthrough link after recording.
 
 ## Notes
 
