@@ -1,218 +1,158 @@
-﻿import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import Gallery from './Gallery'
 
-const API_ENDPOINT = 'https://api.apiflash.com/v1/urltoimage'
-
-const defaultForm = {
-  url: 'https://codepath.org',
-  width: 1280,
-  height: 720,
-  format: 'jpeg',
-  noAds: true,
-  noCookieBanners: true,
-}
+const API_ENDPOINT = 'https://api.thecatapi.com/v1/images/search?has_breeds=1&limit=1'
+const MAX_ATTEMPTS = 20
 
 function App() {
-  const [form, setForm] = useState(defaultForm)
-  const [prevImages, setPrevImages] = useState([])
-  const [latestScreenshot, setLatestScreenshot] = useState(null)
-  const [status, setStatus] = useState('Ready to generate your first screenshot.')
-  const [error, setError] = useState('')
+  const [currentCat, setCurrentCat] = useState(null)
+  const [banList, setBanList] = useState([])
+  const [history, setHistory] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const apiKey = import.meta.env.VITE_APIFLASH_ACCESS_KEY
-
-  const queryPreview = useMemo(() => {
-    const params = buildApiParams(form, 'hidden')
-
-    return `${API_ENDPOINT}?${params.toString()}`
-  }, [form])
-
-  function updateField(field, value) {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }))
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault()
+  async function discoverCat() {
+    setIsLoading(true)
     setError('')
 
-    if (!apiKey) {
-      setError('Missing ApiFlash access key. Add VITE_APIFLASH_ACCESS_KEY to your local .env file.')
-      return
-    }
-
-    if (!form.url.trim()) {
-      setError('Please enter a URL to capture.')
-      return
-    }
-
-    setIsLoading(true)
-    setStatus('Calling ApiFlash...')
-
     try {
-      const params = buildApiParams(form, apiKey)
-      const response = await fetch(`${API_ENDPOINT}?${params.toString()}`)
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+        const response = await fetch(API_ENDPOINT)
 
-      if (!response.ok) {
-        throw new Error('ApiFlash could not generate that screenshot. Check the URL and try again.')
+        if (!response.ok) {
+          throw new Error('The Cat API could not find a cat right now. Please try again.')
+        }
+
+        const data = await response.json()
+        const cat = formatCat(data[0])
+
+        if (cat && !hasBannedAttribute(cat, banList)) {
+          setCurrentCat(cat)
+          setHistory((previousHistory) => [cat, ...previousHistory])
+          return
+        }
       }
 
-      const screenshotBlob = await response.blob()
-      const imageUrl = URL.createObjectURL(screenshotBlob)
-      const screenshot = {
-        id: crypto.randomUUID(),
-        imageUrl,
-        capturedUrl: form.url,
-        size: `${form.width} x ${form.height}`,
-        format: form.format,
-        createdAt: new Date().toLocaleString(),
-      }
-
-      setLatestScreenshot(screenshot)
-      setPrevImages((currentImages) => [screenshot, ...currentImages])
-      setStatus('Screenshot generated successfully!')
+      setError('No cats matched your current ban list. Remove a banned value and try again.')
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Something went wrong.')
-      setStatus('Generation failed.')
     } finally {
       setIsLoading(false)
     }
   }
 
+  function addToBanList(value) {
+    if (!value || banList.includes(value)) {
+      return
+    }
+
+    setBanList((currentBanList) => [...currentBanList, value])
+  }
+
+  function removeFromBanList(value) {
+    setBanList((currentBanList) => currentBanList.filter((item) => item !== value))
+  }
+
   return (
     <main className="app-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">ApiFlash Screenshot Lab</p>
-        <h1>Build Your Own Screenshot! 📸</h1>
-        <p className="intro">
-          Choose a web page, set the image size, and generate screenshots with editable ApiFlash query parameters.
-        </p>
-      </section>
+      <Gallery cats={history} onSelectCat={setCurrentCat} />
 
-      <section className="builder-grid" aria-label="Screenshot builder">
-        <form className="control-panel" onSubmit={handleSubmit}>
-          <label>
-            URL
-            <input
-              type="url"
-              value={form.url}
-              onChange={(event) => updateField('url', event.target.value)}
-              placeholder="https://example.com"
-              required
-            />
-            <span className="field-help">The full website address that ApiFlash should capture.</span>
-          </label>
-
-          <div className="field-row">
-            <label>
-              Width
-              <input
-                type="number"
-                min="320"
-                max="1920"
-                value={form.width}
-                onChange={(event) => updateField('width', Number(event.target.value))}
-                required
-              />
-              <span className="field-help">Controls how wide the screenshot image will be in pixels.</span>
-            </label>
-            <label>
-              Height
-              <input
-                type="number"
-                min="240"
-                max="1600"
-                value={form.height}
-                onChange={(event) => updateField('height', Number(event.target.value))}
-                required
-              />
-              <span className="field-help">Controls how tall the screenshot image will be in pixels.</span>
-            </label>
-          </div>
-
-          <label>
-            Format
-            <select value={form.format} onChange={(event) => updateField('format', event.target.value)}>
-              <option value="jpeg">JPEG</option>
-              <option value="png">PNG</option>
-              <option value="webp">WEBP</option>
-            </select>
-            <span className="field-help">Choose the file type returned by ApiFlash.</span>
-          </label>
-
-          <div className="toggle-list">
-            <label className="toggle-field">
-              <input
-                type="checkbox"
-                checked={form.noAds}
-                onChange={(event) => updateField('noAds', event.target.checked)}
-              />
-              <span>
-                No ads
-                <span className="field-help">Ask ApiFlash to remove ads before taking the screenshot.</span>
-              </span>
-            </label>
-            <label className="toggle-field">
-              <input
-                type="checkbox"
-                checked={form.noCookieBanners}
-                onChange={(event) => updateField('noCookieBanners', event.target.checked)}
-              />
-              <span>
-                No cookie banners
-                <span className="field-help">Ask ApiFlash to hide cookie notices before taking the screenshot.</span>
-              </span>
-            </label>
-          </div>
-
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Generating...' : 'Generate Screenshot'}
+      <section className="discovery-panel" aria-live="polite">
+        <header className="hero-panel">
+          <p className="eyebrow">Cat discovery lab</p>
+          <h1>Veni Vici!</h1>
+          <p className="intro">Discover a new cat, then ban attributes to shape what appears next.</p>
+          <button className="discover-button" type="button" onClick={discoverCat} disabled={isLoading}>
+            {isLoading ? 'Discovering...' : 'Discover'}
           </button>
-        </form>
+        </header>
 
-        <section className="result-panel" aria-live="polite">
-          <div className="status-card">
-            <p className="status-label">Current Query Status</p>
-            <code>{queryPreview}</code>
-            <p>{status}</p>
-          </div>
+        {error ? <p className="error-message">{error}</p> : null}
+        {isLoading ? <p className="loading-message">Fetching a cat that matches your filters...</p> : null}
 
-          {error ? <p className="error-message">{error}</p> : null}
-          {isLoading ? <p className="loading-message">Loading screenshot from ApiFlash...</p> : null}
-
-          <div className="screenshot-frame">
-            {latestScreenshot ? (
-              <img src={latestScreenshot.imageUrl} alt={`Screenshot of ${latestScreenshot.capturedUrl}`} />
-            ) : (
-              <p>Your latest screenshot will appear here.</p>
-            )}
-          </div>
+        <section className="result-card">
+          {currentCat ? (
+            <>
+              <div className="cat-details">
+                <h2>{currentCat.name}</h2>
+                <div className="attribute-list" aria-label="Clickable cat attributes">
+                  {currentCat.attributes.map((attribute) => (
+                    <button
+                      className="attribute-chip"
+                      type="button"
+                      key={attribute.label}
+                      onClick={() => addToBanList(attribute.value)}
+                    >
+                      <span>{attribute.label}</span>
+                      {attribute.value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <img className="cat-image" src={currentCat.imageUrl} alt={`${currentCat.name} cat`} />
+            </>
+          ) : (
+            <div className="empty-state">
+              <h2>Ready to discover?</h2>
+              <p>Click Discover to fetch a random cat with breed details and an image.</p>
+            </div>
+          )}
         </section>
       </section>
 
-      <div className="container">
-        <Gallery images={prevImages} />
-      </div>
+      <aside className="ban-panel">
+        <h2>Ban List</h2>
+        <p>Click an attribute to ban it. Click a banned value here to remove it.</p>
+
+        {banList.length === 0 ? (
+          <p className="empty-ban-list">Nothing banned yet.</p>
+        ) : (
+          <div className="ban-list">
+            {banList.map((value) => (
+              <button className="ban-chip" type="button" key={value} onClick={() => removeFromBanList(value)}>
+                {value}
+              </button>
+            ))}
+          </div>
+        )}
+      </aside>
     </main>
   )
 }
 
-function buildApiParams(form, accessKey) {
-  const params = new URLSearchParams({
-    access_key: accessKey,
-    url: form.url,
-    width: String(form.width),
-    height: String(form.height),
-    format: form.format,
-    no_ads: form.noAds ? 'true' : 'false',
-    no_cookie_banners: form.noCookieBanners ? 'true' : 'false',
-  })
+function formatCat(catData) {
+  const breed = catData?.breeds?.[0]
 
-  return params
+  if (!catData?.url || !breed?.name || !breed?.origin || !breed?.temperament) {
+    return null
+  }
+
+  const lifeSpan = breed.life_span ? `${breed.life_span} years` : ''
+  const weight = breed.weight?.imperial ? `${breed.weight.imperial} lbs` : ''
+  const lifeOrWeight = lifeSpan || weight
+
+  if (!lifeOrWeight) {
+    return null
+  }
+
+  const attributes = [
+    { label: 'Breed', value: breed.name },
+    { label: 'Origin', value: breed.origin },
+    { label: 'Temperament', value: breed.temperament },
+    { label: breed.life_span ? 'Life span' : 'Weight', value: lifeOrWeight },
+  ]
+
+  return {
+    id: catData.id,
+    imageUrl: catData.url,
+    name: breed.name,
+    attributes,
+  }
+}
+
+function hasBannedAttribute(cat, banList) {
+  return cat.attributes.some((attribute) => banList.includes(attribute.value))
 }
 
 export default App

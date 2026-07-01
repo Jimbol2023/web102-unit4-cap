@@ -1,29 +1,27 @@
-function Gallery({ images }) {
+function Gallery({ cats, onSelectCat }) {
   return (
-    <section className="gallery-section">
-      <div>
-        <p className="eyebrow">Gallery</p>
-        <h2>All screenshots generated so far</h2>
-      </div>
+    <aside className="history-panel">
+      <h2>History</h2>
+      <p>Previously discovered cats appear here.</p>
 
-      {images.length === 0 ? (
-        <p className="empty-gallery">No screenshots yet. Generate one to start your gallery.</p>
+      {cats.length === 0 ? (
+        <p className="empty-history">No discoveries yet.</p>
       ) : (
-        <div className="gallery-grid">
-          {images.map((image) => (
-            <article className="gallery-card" key={image.id}>
-              <img src={image.imageUrl} alt={`Screenshot of ${image.capturedUrl}`} />
-              <div>
-                <p>{image.capturedUrl}</p>
-                <span>
-                  {image.size} - {image.format.toUpperCase()} - {image.createdAt}
-                </span>
-              </div>
-            </article>
+        <div className="history-list">
+          {cats.map((cat, index) => (
+            <button
+              className="history-item"
+              type="button"
+              key={`${cat.id}-${index}`}
+              onClick={() => onSelectCat(cat)}
+            >
+              <img src={cat.imageUrl} alt={`${cat.name} thumbnail`} />
+              <span>{cat.name}</span>
+            </button>
           ))}
         </div>
       )}
-    </section>
+    </aside>
   )
 }
 
