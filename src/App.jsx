@@ -3,6 +3,7 @@ import './App.css'
 import Gallery from './Gallery'
 
 const API_ENDPOINT = 'https://api.thecatapi.com/v1/images/search?has_breeds=1&limit=1'
+const BREEDS_ENDPOINT = 'https://api.thecatapi.com/v1/breeds'
 const MAX_ATTEMPTS = 20
 
 function App() {
@@ -18,14 +19,7 @@ function App() {
 
     try {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-        const response = await fetch(API_ENDPOINT)
-
-        if (!response.ok) {
-          throw new Error('The Cat API could not find a cat right now. Please try again.')
-        }
-
-        const data = await response.json()
-        const cat = formatCat(data[0])
+        const cat = await fetchCat()
 
         if (cat && !hasBannedAttribute(cat, banList)) {
           setCurrentCat(cat)
@@ -34,7 +28,11 @@ function App() {
         }
       }
 
-      setError('No cats matched your current ban list. Remove a banned value and try again.')
+      if (banList.length > 0) {
+        setError('No cats matched your current ban list. Remove a banned value and try again.')
+      } else {
+        setError('The Cat API did not return breed details. Please try Discover again.')
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Something went wrong.')
     } finally {
@@ -121,8 +119,47 @@ function App() {
   )
 }
 
-function formatCat(catData) {
-  const breed = catData?.breeds?.[0]
+async function fetchCat() {
+  const response = await fetch(API_ENDPOINT)
+
+  if (!response.ok) {
+    throw new Error('The Cat API could not find a cat right now. Please try again.')
+  }
+
+  const data = await response.json()
+  const cat = formatCat(data[0])
+
+  if (cat) {
+    return cat
+  }
+
+  const breed = await fetchRandomBreed()
+  const imageResponse = await fetch(`${API_ENDPOINT}&breed_ids=${breed.id}`)
+
+  if (!imageResponse.ok) {
+    throw new Error('The Cat API could not find an image for that breed. Please try again.')
+  }
+
+  const imageData = await imageResponse.json()
+
+  return formatCat(imageData[0], breed)
+}
+
+async function fetchRandomBreed() {
+  const response = await fetch(BREEDS_ENDPOINT)
+
+  if (!response.ok) {
+    throw new Error('The Cat API could not load breed details. Please try again.')
+  }
+
+  const breeds = await response.json()
+  const randomIndex = Math.floor(Math.random() * breeds.length)
+
+  return breeds[randomIndex]
+}
+
+function formatCat(catData, fallbackBreed) {
+  const breed = catData?.breeds?.[0] || fallbackBreed
 
   if (!catData?.url || !breed?.name || !breed?.origin || !breed?.temperament) {
     return null
