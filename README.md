@@ -4,7 +4,7 @@ Submitted by: **Olabode Jimoh**
 
 Veni Vici! is a React + Vite app that uses The Cat API to discover one random cat at a time. Users can view matching breed details and image data, then ban attributes so future discoveries avoid those values.
 
-Time spent: **TBD** hours spent in total
+Time spent: **8** hours spent in total
 
 ## Required Features
 
@@ -24,16 +24,16 @@ The following **stretch** features are implemented:
 
 ## Screenshot
 
-TODO: Add a screenshot of the completed app.
+<img src="./public/screenshots/app-demo.png" alt="Veni Vici app screenshot with cat result, attributes, and ban list" width="700" />
 
 ## Video Walkthrough
 
-TODO: Add Loom walkthrough link after recording.
+[Video Walkthrough](https://www.loom.com/share/14e1c00eb224437ea7e8f45a00466992)
 
 ## Notes
 
-- The Cat API sometimes returns items without breed data, so the app keeps fetching until it finds a result with matching breed attributes and an image.
-- Banned values are checked before a new result is displayed.
+- The Cat API sometimes returns image results without embedded breed data, so the app falls back to breed details and a breed-specific image request.
+- Banned values are checked before a new result is displayed so future discoveries avoid selected attributes.
 
 ## License
 
